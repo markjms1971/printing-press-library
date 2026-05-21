@@ -456,15 +456,8 @@ func syncResource(c syncFetcher, db *store.Store, resource, sinceTS string, full
 		// Apply user-supplied --param / --resource-param overrides last so they
 		// win over spec-derived defaults (e.g. forcing mine=true on a list
 		// endpoint whose OpenAPI spec marks the filter optional).
-		// PATCH(greptile-715-issue2: confirm locationId flows to POST body) —
-		// applyTo(resource, params, false) passes isDependent=false, which
-		// means flatGlobal (--param) AND trueGlobal (--global-param) are both
-		// injected into params. locationId set via --global-param locationId=<id>
-		// is stored in trueGlobal and reaches params["locationId"] here;
-		// fetchSyncPage then reads params["locationId"] into the POST body.
-		// The `false` argument does NOT suppress trueGlobal — see applyTo in
-		// helpers.go: trueGlobal always propagates regardless of isDependent.
 		userParams.applyTo(resource, params, false)
+		ensureContactsLocationParam(resource, params, locID)
 
 		// PATCH(amend-2026-05-20: contacts + tags sync) — dispatch GET vs POST
 		// based on the per-resource method registry. Resources whose list
@@ -1223,6 +1216,12 @@ func resolveSyncLocationID(p *syncUserParams, resource string) string {
 		return v
 	}
 	return ""
+}
+
+func ensureContactsLocationParam(resource string, params map[string]string, locID string) {
+	if resource == "contacts" && locID != "" {
+		params["locationId"] = locID
+	}
 }
 
 // fetchSyncPage dispatches a single sync page request to GET or POST based

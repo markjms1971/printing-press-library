@@ -187,3 +187,19 @@ func TestResolveSyncLocationID_UsesCurrentResourceParam(t *testing.T) {
 		t.Fatalf("locations_tags locationId = %q, want tag-location", got)
 	}
 }
+
+func TestEnsureContactsLocationParam_PropagatesResolvedLocationID(t *testing.T) {
+	params := map[string]string{"pageLimit": "100"}
+
+	ensureContactsLocationParam("contacts", params, "env-location")
+
+	if got := params["locationId"]; got != "env-location" {
+		t.Fatalf("contacts locationId = %q, want env-location", got)
+	}
+
+	otherParams := map[string]string{}
+	ensureContactsLocationParam("locations_tags", otherParams, "env-location")
+	if _, ok := otherParams["locationId"]; ok {
+		t.Fatalf("locations_tags should not receive POST body locationId param")
+	}
+}
