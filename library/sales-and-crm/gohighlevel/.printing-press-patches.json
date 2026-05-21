@@ -25,6 +25,17 @@
       "findings_addressed": ["greptile-715-issue1", "greptile-715-issue2", "greptile-715-issue3"],
       "patch_count": 8,
       "notes": "Issue 1 (P1): contacts_tags was listed in defaultSyncResources(), syncResourcePath(), and syncResourceMethod() as if it were a standalone API resource. It is not — it is derived from every contacts page by deriveContactsTagsFromPage. Removing it from the default list eliminates the second /contacts/search crawl and stops contact JSON blobs from being stored under resource_type='contacts_tags' in the generic resources table. Issue 2 (P1 verify): applyTo(resource, params, false) with isDependent=false propagates both flatGlobal (--param) and trueGlobal (--global-param) into params. locationId from --global-param reaches params[\"locationId\"], which fetchSyncPage reads into the POST body. No bug found; clarifying comment added. Issue 3 (P2): extractSearchAfterCursor Strategy 2 (derive cursor from last contact id) returned hasMore=true unconditionally, causing one extra /contacts/search call when the final page had exactly pageSize.limit items. Fixed by guarding hasMore on len(items) >= pageSize.limit at the call site."
+    },
+    {
+      "date": "2026-05-20",
+      "amend_run_id": "amend-2026-05-20-greptile-715-followup",
+      "summary": "fix(gohighlevel): address follow-up Greptile PR #715 sync review",
+      "files": [
+        "internal/cli/sync.go",
+        "internal/cli/sync_test.go"
+      ],
+      "findings_addressed": ["greptile-715-followup-tags-key", "greptile-715-followup-contacts-tags-partial-failure"],
+      "notes": "Adds tags to pageItemKeys so locations_tags extraction stays deterministic if the envelope gains another array, and makes contacts_tags derivation collect all per-tag upsert failures instead of returning on the first failed tag."
     }
   ]
 }

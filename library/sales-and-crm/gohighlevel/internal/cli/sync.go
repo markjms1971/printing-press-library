@@ -5,10 +5,11 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
 	"github.com/mvanhorn/printing-press-library/library/sales-and-crm/gohighlevel/internal/cliutil"
 	"github.com/mvanhorn/printing-press-library/library/sales-and-crm/gohighlevel/internal/store"
+	"github.com/spf13/cobra"
 	"net/url"
 	"os"
 	"regexp"
@@ -1311,7 +1312,7 @@ var genericIDFieldFallbacks = []string{"id", "ID", "gid", "sid", "uid", "uuid", 
 // {"Items": [...]} envelopes fall through to the ambiguity scan and a
 // single-array sibling miscount silently truncates sync.
 var pageItemKeys = []string{
-	"contacts", "data", "results", "items", "records", "nodes", "entries",
+	"contacts", "tags", "data", "results", "items", "records", "nodes", "entries",
 	"Data", "Results", "Items", "Records", "Nodes", "Entries",
 }
 
@@ -1365,6 +1366,7 @@ func extractID(resource string, obj map[string]any) string {
 // "what tags are on contact X" and "when were contact X's tags last
 // observed" without re-parsing the contacts JSON blob.
 func deriveContactsTagsFromPage(db *store.Store, items []json.RawMessage) error {
+	var upsertErrs []error
 	for _, item := range items {
 		var contact map[string]any
 		if err := json.Unmarshal(item, &contact); err != nil {
@@ -1404,9 +1406,10 @@ func deriveContactsTagsFromPage(db *store.Store, items []json.RawMessage) error 
 				continue
 			}
 			if err := db.UpsertContactsTags(rowJSON); err != nil {
-				return fmt.Errorf("upsert contacts_tags %s: %w", compositeID, err)
+				upsertErrs = append(upsertErrs, fmt.Errorf("upsert contacts_tags %s: %w", compositeID, err))
+				continue
 			}
 		}
 	}
-	return nil
+	return errors.Join(upsertErrs...)
 }
