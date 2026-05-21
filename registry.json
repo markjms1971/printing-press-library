@@ -2535,6 +2535,29 @@
       }
     },
     {
+      "name": "setlist-fm",
+      "category": "media-and-entertainment",
+      "api": "Setlist Fm",
+      "description": "<p>",
+      "path": "library/media-and-entertainment/setlist-fm",
+      "printer": "davemorin",
+      "printer_name": "Dave Morin",
+      "mcp": {
+        "binary": "setlist-fm-pp-mcp",
+        "transports": [
+          "stdio"
+        ],
+        "tool_count": 15,
+        "public_tool_count": 0,
+        "auth_type": "api_key",
+        "env_vars": [
+          "SETLIST_FM_API_KEY"
+        ],
+        "mcp_ready": "full",
+        "spec_format": "openapi3"
+      }
+    },
+    {
       "name": "shopify",
       "category": "commerce",
       "api": "Shopify",
