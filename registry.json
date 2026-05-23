@@ -1946,11 +1946,10 @@
     {
       "name": "edgar",
       "category": "other",
-      "api": "SEC EDGAR",
+      "api": "EDGAR",
       "description": "Fetch SEC EDGAR filings, insider activity, XBRL facts, and cached filing search results with agent-friendly output.",
       "search_terms": [
         "edgar",
-        "SEC EDGAR",
         "edgar-pp-cli",
         "Fetch SEC EDGAR filings, insider activity, XBRL facts, and cached filing search results with agent-friendly output.",
         "Recheck delta cursor",
