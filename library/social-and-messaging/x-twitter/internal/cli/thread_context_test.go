@@ -2,7 +2,15 @@
 
 package cli
 
-import "testing"
+import (
+	"context"
+	"encoding/json"
+	"path/filepath"
+	"testing"
+
+	"github.com/mvanhorn/printing-press-library/library/social-and-messaging/x-twitter/internal/store"
+	"github.com/spf13/cobra"
+)
 
 func TestThreadParticipantsHandlesOptionalSections(t *testing.T) {
 	result := &threadContextResult{
@@ -30,5 +38,44 @@ func TestThreadParticipantsHandlesOptionalSections(t *testing.T) {
 	}
 	if participants[0].ID != "10" || participants[1].ID != "11" {
 		t.Fatalf("participants = %+v", participants)
+	}
+}
+
+func TestLoadLocalContextRepliesReadsTweetsTableAndSkipsSeen(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-twitter.db")
+	db, err := store.OpenWithContext(context.Background(), dbPath)
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	for _, raw := range []string{
+		`{"id":"root","conversation_id":"root","created_at":"2026-01-01T00:00:00Z","text":"root"}`,
+		`{"id":"parent","conversation_id":"root","created_at":"2026-01-01T00:01:00Z","text":"parent","referenced_tweets":[{"type":"replied_to","id":"root"}]}`,
+		`{"id":"focus","conversation_id":"root","created_at":"2026-01-01T00:02:00Z","text":"focus","referenced_tweets":[{"type":"replied_to","id":"parent"}]}`,
+		`{"id":"reply","conversation_id":"root","created_at":"2026-01-01T00:03:00Z","text":"reply","referenced_tweets":[{"type":"replied_to","id":"focus"}]}`,
+	} {
+		if err := db.UpsertTweets(json.RawMessage(raw)); err != nil {
+			t.Fatalf("upsert tweet %s: %v", raw, err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("close store: %v", err)
+	}
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	focus := &resolvedPostRecord{Input: "focus", TweetID: "focus", ConversationID: "root"}
+	replies, err := loadLocalContextReplies(cmd, focus, dbPath, parseIncludeSet("refs"), 10, map[string]bool{
+		"root":   true,
+		"parent": true,
+		"focus":  true,
+	})
+	if err != nil {
+		t.Fatalf("loadLocalContextReplies returned error: %v", err)
+	}
+	if len(replies) != 1 {
+		t.Fatalf("replies len = %d, want 1: %+v", len(replies), replies)
+	}
+	if replies[0].TweetID != "reply" || replies[0].InReplyTo != "focus" {
+		t.Fatalf("reply = %+v", replies[0])
 	}
 }

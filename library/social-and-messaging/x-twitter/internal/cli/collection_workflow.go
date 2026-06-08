@@ -36,10 +36,9 @@ type collectionItemSnapshot struct {
 
 func newNovelCollectionCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:         "collection",
-		Short:       "Save, list, and export durable local collections of X posts",
-		Annotations: map[string]string{"mcp:read-only": "true"},
-		RunE:        parentNoSubcommandRunE(flags),
+		Use:   "collection",
+		Short: "Save, list, and export durable local collections of X posts",
+		RunE:  parentNoSubcommandRunE(flags),
 	}
 	cmd.AddCommand(newNovelCollectionSaveCmd(flags))
 	cmd.AddCommand(newNovelCollectionListCmd(flags))
@@ -60,10 +59,7 @@ func newNovelCollectionSaveCmd(flags *rootFlags) *cobra.Command {
 		Example: `  x-twitter-pp-cli collection save https://x.com/user/status/123 --collection ai-agents --note "Good framing" --agent
   x-twitter-pp-cli collection save ai-agents 123 --tag research --agent
   x-twitter-pp-cli collection save --collection ai-agents --from-search "agentic coding" --limit 25 --agent`,
-		Annotations: map[string]string{
-			"mcp:read-only":          "true",
-			"pp:no-error-path-probe": "true",
-		},
+		Annotations: map[string]string{"pp:no-error-path-probe": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dryRunOK(flags) {
 				return nil
@@ -431,12 +427,18 @@ func resolvePostsFromRecentSearch(cmd *cobra.Command, flags *rootFlags, query st
 		if len(records) >= limit {
 			break
 		}
-		rec, err := normalizeTweetRecord(query, raw, userByID, "live", "not_synced", include)
+		rec, err := normalizeSearchTweetRecord(raw, userByID, include)
 		if err == nil {
 			records = append(records, rec)
 		}
 	}
 	return records, nil
+}
+
+func normalizeSearchTweetRecord(raw json.RawMessage, userByID map[string]*postAuthorSummary, include map[string]bool) (*resolvedPostRecord, error) {
+	var tweetObj map[string]any
+	_ = json.Unmarshal(raw, &tweetObj)
+	return normalizeTweetRecord(stringField(tweetObj, "id"), raw, userByID, "live", "not_synced", include)
 }
 
 func writeCollectionExport(w io.Writer, collection string, items []collectionItemSnapshot, format string) error {

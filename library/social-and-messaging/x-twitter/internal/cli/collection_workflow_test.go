@@ -4,6 +4,7 @@ package cli
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -62,5 +63,15 @@ func TestWriteCollectionExportMarkdownAndJSONL(t *testing.T) {
 	}
 	if lines := strings.Split(strings.TrimSpace(jsonl.String()), "\n"); len(lines) != 1 || !strings.Contains(lines[0], `"tweet_id":"123"`) {
 		t.Fatalf("jsonl export = %q", jsonl.String())
+	}
+}
+
+func TestNormalizeSearchTweetRecordUsesTweetIDAsInput(t *testing.T) {
+	rec, err := normalizeSearchTweetRecord(json.RawMessage(`{"id":"123","text":"found by query"}`), nil, parseIncludeSet("refs"))
+	if err != nil {
+		t.Fatalf("normalizeSearchTweetRecord returned error: %v", err)
+	}
+	if rec.Input != "123" {
+		t.Fatalf("Input = %q, want tweet ID", rec.Input)
 	}
 }

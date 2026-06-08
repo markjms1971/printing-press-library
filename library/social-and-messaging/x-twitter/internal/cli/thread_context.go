@@ -129,7 +129,7 @@ func buildThreadContext(cmd *cobra.Command, flags *rootFlags, input, dbPath, mod
 		}
 	}
 	if includeReplies {
-		replies, source, gaps := loadContextReplies(cmd, flags, focus, dbPath, mode, include, limit)
+		replies, source, gaps := loadContextReplies(cmd, flags, focus, dbPath, mode, include, limit, seen)
 		result.Replies = replies
 		result.Gaps = append(result.Gaps, gaps...)
 		if source != "" && source != focus.Source {
@@ -198,14 +198,14 @@ func referencedID(rec *resolvedPostRecord, refType string) string {
 	return ""
 }
 
-func loadContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolvedPostRecord, dbPath, mode string, include map[string]bool, limit int) ([]threadContextReply, string, []string) {
+func loadContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolvedPostRecord, dbPath, mode string, include map[string]bool, limit int, skipIDs map[string]bool) ([]threadContextReply, string, []string) {
 	var all []threadContextReply
 	var gaps []string
 	if dbPath == "" {
 		dbPath = defaultDBPath("x-twitter-pp-cli")
 	}
 	if mode != "live" {
-		local, err := loadLocalContextReplies(cmd, focus, dbPath, include, limit)
+		local, err := loadLocalContextReplies(cmd, focus, dbPath, include, limit, skipIDs)
 		if err == nil {
 			all = append(all, local...)
 		} else {
@@ -213,7 +213,7 @@ func loadContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolvedPos
 		}
 	}
 	if mode != "local" && len(all) < limit && focus.ConversationID != "" {
-		live, err := loadLiveContextReplies(cmd, flags, focus, include, limit-len(all))
+		live, err := loadLiveContextReplies(cmd, flags, focus, include, limit-len(all), skipIDs)
 		if err == nil {
 			all = append(all, live...)
 			gaps = append(gaps, "recent_search_window_only")
@@ -241,22 +241,34 @@ func loadContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolvedPos
 	return all, source, gaps
 }
 
-func loadLocalContextReplies(cmd *cobra.Command, focus *resolvedPostRecord, dbPath string, include map[string]bool, limit int) ([]threadContextReply, error) {
+func loadLocalContextReplies(cmd *cobra.Command, focus *resolvedPostRecord, dbPath string, include map[string]bool, limit int, skipIDs map[string]bool) ([]threadContextReply, error) {
 	db, err := store.OpenWithContext(cmd.Context(), dbPath)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 	rows, err := db.DB().QueryContext(cmd.Context(),
-		`SELECT data FROM resources
-		 WHERE json_extract(data, '$.conversation_id') = ? OR id = ?
-		 ORDER BY COALESCE(json_extract(data, '$.created_at'), '') ASC
-		 LIMIT ?`, focus.ConversationID, focus.ConversationID, limit)
+		`SELECT data FROM (
+			SELECT id, data, COALESCE(created_at, json_extract(data, '$.created_at'), '') AS created_at
+			FROM tweets
+			WHERE conversation_id = ? OR id = ?
+			UNION ALL
+			SELECT id, data, COALESCE(json_extract(data, '$.created_at'), '') AS created_at
+			FROM resources
+			WHERE (json_extract(data, '$.conversation_id') = ? OR id = ?)
+			  AND resource_type IN ('tweets', 'users_tweets', 'liked_tweets', 'bookmarks', 'quote_tweets')
+		)
+		 ORDER BY created_at ASC
+		 LIMIT ?`, focus.ConversationID, focus.ConversationID, focus.ConversationID, focus.ConversationID, limit*2)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var replies []threadContextReply
+	seen := make(map[string]bool, len(skipIDs))
+	for id, skip := range skipIDs {
+		seen[id] = skip
+	}
 	for rows.Next() {
 		var data sql.NullString
 		if err := rows.Scan(&data); err != nil || !data.Valid {
@@ -266,17 +278,24 @@ func loadLocalContextReplies(cmd *cobra.Command, focus *resolvedPostRecord, dbPa
 		if err != nil || rec.TweetID == focus.TweetID {
 			continue
 		}
+		if seen[rec.TweetID] {
+			continue
+		}
 		parent := referencedID(rec, "replied_to")
 		if parent == "" {
 			continue
 		}
 		reply := threadContextReply{resolvedPostRecord: *rec, InReplyTo: parent, Depth: replyDepth(rec, focus.TweetID, 1)}
 		replies = append(replies, reply)
+		seen[rec.TweetID] = true
+		if len(replies) >= limit {
+			break
+		}
 	}
 	return replies, rows.Err()
 }
 
-func loadLiveContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolvedPostRecord, include map[string]bool, limit int) ([]threadContextReply, error) {
+func loadLiveContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolvedPostRecord, include map[string]bool, limit int, skipIDs map[string]bool) ([]threadContextReply, error) {
 	if limit <= 0 {
 		return nil, nil
 	}
@@ -324,6 +343,9 @@ func loadLiveContextReplies(cmd *cobra.Command, flags *rootFlags, focus *resolve
 		}
 		rec, err := normalizeTweetRecord(focus.Input, raw, users, "live", "not_synced", include)
 		if err != nil || rec.TweetID == focus.TweetID {
+			continue
+		}
+		if skipIDs[rec.TweetID] {
 			continue
 		}
 		parent := referencedID(rec, "replied_to")
