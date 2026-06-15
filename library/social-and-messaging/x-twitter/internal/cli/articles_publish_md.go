@@ -74,6 +74,7 @@ func newNovelArticlesPublishMdCmd(flags *rootFlags) *cobra.Command {
 	var post bool
 	var draft bool
 	var updateID string
+	var replaceUnknownEntities bool
 	cmd := &cobra.Command{
 		Use:     "articles-publish-md <markdown-file>",
 		Short:   "Convert a markdown file to an X Article (preview by default; --draft or --post to write)",
@@ -137,10 +138,11 @@ func newNovelArticlesPublishMdCmd(flags *rootFlags) *cobra.Command {
 					},
 				}
 				result, err := updateMarkdownArticle(cmd.Context(), deps, articleUpdateOptions{
-					articleID:    strings.TrimSpace(updateID),
-					title:        parsed.Frontmatter.Title,
-					coverPath:    parsed.Frontmatter.Cover,
-					contentState: cs,
+					articleID:              strings.TrimSpace(updateID),
+					title:                  parsed.Frontmatter.Title,
+					coverPath:              parsed.Frontmatter.Cover,
+					contentState:           cs,
+					replaceUnknownEntities: replaceUnknownEntities,
 				})
 				if err != nil {
 					return classifyAPIError(err, flags)
@@ -202,6 +204,7 @@ func newNovelArticlesPublishMdCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().BoolVar(&draft, "draft", false, "Create the article as a draft without publishing")
 	cmd.Flags().BoolVar(&post, "post", false, "Create and publish the article publicly (default: preview only)")
 	cmd.Flags().StringVar(&updateID, "update", "", "Update an existing draft article by rest_id instead of creating a new draft")
+	cmd.Flags().BoolVar(&replaceUnknownEntities, "replace-unknown-entities", false, "With --update, proceed even when the target draft contains entity types the converter cannot reproduce")
 	return cmd
 }
 
@@ -300,7 +303,7 @@ func unpublishArticleEntity(ctx context.Context, p articleGraphQLPoster, article
 // PATCH: Wire the X-specific Articles create/update/publish GraphQL sequence.
 func publishMarkdownArticle(ctx context.Context, flags *rootFlags, title string, coverPath string, contentState draftContentState, publish bool) (*publishedArticleResult, error) {
 	if strings.TrimSpace(title) == "" {
-		return nil, fmt.Errorf("frontmatter title is required when --post is set")
+		return nil, fmt.Errorf("frontmatter title is required when creating an article draft or post")
 	}
 	c, err := flags.newClient()
 	if err != nil {
@@ -818,16 +821,9 @@ func extractInlineSpans(s string) (string, []inlineStyle, []linkSpan) {
 	out := strings.Builder{}
 	i := 0
 	for i < len(s) {
-		if s[i] == '`' {
-			end := strings.Index(s[i+1:], "`")
-			if end >= 0 {
-				inner := s[i+1 : i+1+end]
-				offset := utf16Len(out.String())
-				out.WriteString(inner)
-				ranges = append(ranges, inlineStyle{Offset: offset, Length: utf16Len(inner), Style: "CODE"})
-				i = i + 1 + end + 1
-				continue
-			}
+		if next, ok := consumeInlineCode(s, i, &out, &ranges); ok {
+			i = next
+			continue
 		}
 		// Bold first (**...**) so it doesn't get consumed as italic.
 		if i+2 <= len(s) && s[i:i+2] == "**" {
@@ -879,15 +875,15 @@ func extractInlineSpans(s string) (string, []inlineStyle, []linkSpan) {
 // consumes. Empty link text or empty url returns ok=false so the caller copies
 // the characters through as plain text.
 func parseInlineLinkAt(s string, i int) (inner string, linkURL string, advance int, ok bool) {
-	closeText := strings.Index(s[i+1:], "](")
+	closeText := findInlineLinkTextClose(s, i)
 	if closeText < 0 {
 		return "", "", 0, false
 	}
-	inner = s[i+1 : i+1+closeText]
+	inner = s[i+1 : closeText]
 	if strings.TrimSpace(inner) == "" {
 		return "", "", 0, false
 	}
-	urlStart := i + 1 + closeText + 2
+	urlStart := closeText + 2
 	// PATCH: balance nested parens so URLs like .../Rust_(programming_language)
 	// are not truncated at the inner ')' (Greptile P1 on PR #1141).
 	closeURL := -1
@@ -918,6 +914,40 @@ func parseInlineLinkAt(s string, i int) (inner string, linkURL string, advance i
 	return inner, linkURL, advance, true
 }
 
+func findInlineLinkTextClose(s string, open int) int {
+	depth := 0
+	for j := open + 1; j+1 < len(s); j++ {
+		switch s[j] {
+		case '[':
+			depth++
+		case ']':
+			if depth > 0 {
+				depth--
+				continue
+			}
+			if s[j+1] == '(' {
+				return j
+			}
+		}
+	}
+	return -1
+}
+
+func consumeInlineCode(s string, i int, out *strings.Builder, ranges *[]inlineStyle) (int, bool) {
+	if i >= len(s) || s[i] != '`' {
+		return i, false
+	}
+	end := strings.Index(s[i+1:], "`")
+	if end < 0 {
+		return i, false
+	}
+	inner := s[i+1 : i+1+end]
+	offset := utf16Len(out.String())
+	out.WriteString(inner)
+	*ranges = append(*ranges, inlineStyle{Offset: offset, Length: utf16Len(inner), Style: "CODE"})
+	return i + 1 + end + 1, true
+}
+
 // extractInlineStyles scans a string for **bold** and *italic* markers and
 // returns the cleaned text plus the inline_style_ranges that describe them.
 //
@@ -929,16 +959,9 @@ func extractInlineStyles(s string) (string, []inlineStyle) {
 	out := strings.Builder{}
 	i := 0
 	for i < len(s) {
-		if s[i] == '`' {
-			end := strings.Index(s[i+1:], "`")
-			if end >= 0 {
-				inner := s[i+1 : i+1+end]
-				offset := utf16Len(out.String())
-				out.WriteString(inner)
-				ranges = append(ranges, inlineStyle{Offset: offset, Length: utf16Len(inner), Style: "CODE"})
-				i = i + 1 + end + 1
-				continue
-			}
+		if next, ok := consumeInlineCode(s, i, &out, &ranges); ok {
+			i = next
+			continue
 		}
 		// Bold first (**...**) so it doesn't get consumed as italic.
 		if i+2 <= len(s) && s[i:i+2] == "**" {

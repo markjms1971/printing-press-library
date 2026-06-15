@@ -179,7 +179,7 @@ func updateMarkdownArticle(ctx context.Context, deps articleUpdateDeps, opts art
 			opts.articleID, strings.Join(scan.unknownTypes, ", "))
 	}
 	if scan.lifecycle == "Published" && !opts.republish {
-		return nil, fmt.Errorf("article %s is published; pass --republish to run Unpublish -> UpdateContent -> Publish (it is briefly unpublished), or edit a draft instead", opts.articleID)
+		return nil, fmt.Errorf("article %s is published; use `articles update-md <markdown-file> --article-id %s --republish` to run Unpublish -> UpdateContent -> Publish (it is briefly unpublished), or edit a draft instead", opts.articleID, opts.articleID)
 	}
 
 	if opts.republish && scan.lifecycle != "Published" {
@@ -245,7 +245,7 @@ func updateMarkdownArticle(ctx context.Context, deps articleUpdateDeps, opts art
 	if opts.republish {
 		publishData, err := publishArticleEntity(ctx, deps.post, opts.articleID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("article %s was updated but final publish failed (%w); it is left UNPUBLISHED, re-publish it in the composer or retry `articles update-md --article-id %s --republish`", opts.articleID, err, opts.articleID)
 		}
 		articleID := opts.articleID
 		if publishedID := articleIDFromPublishResponse(publishData); publishedID != "" {

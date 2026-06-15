@@ -385,8 +385,8 @@ func TestUpdateMarkdownArticlePublishedRequiresRepublish(t *testing.T) {
 		articleID:    "111",
 		contentState: MarkdownBodyToDraftJS("body"),
 	})
-	if err == nil || !strings.Contains(err.Error(), "--republish") {
-		t.Fatalf("expected published-article refusal advising --republish, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "articles update-md <markdown-file> --article-id 111 --republish") {
+		t.Fatalf("expected published-article refusal to name update-md --republish, got %v", err)
 	}
 	if len(poster.calls) != 0 {
 		t.Fatalf("expected no mutations, got %v", poster.ops())
@@ -448,5 +448,28 @@ func TestUpdateMarkdownArticleRepublishRestoresOnFailure(t *testing.T) {
 	wantOps := []string{"ArticleEntityUnpublish", "ArticleEntityUpdateContent", "ArticleEntityPublish"}
 	if strings.Join(poster.ops(), ",") != strings.Join(wantOps, ",") {
 		t.Fatalf("expected restore publish after failure, got %v", poster.ops())
+	}
+}
+
+func TestUpdateMarkdownArticleRepublishFinalPublishFailureHasContext(t *testing.T) {
+	poster := &fakeArticlePoster{fail: map[string]error{"ArticleEntityPublish": fmt.Errorf("publish down")}}
+	deps := testDeps(t, poster, "444", "Published")
+
+	_, err := updateMarkdownArticle(context.Background(), deps, articleUpdateOptions{
+		articleID:    "444",
+		contentState: MarkdownBodyToDraftJS("body"),
+		republish:    true,
+	})
+	if err == nil {
+		t.Fatalf("expected final publish failure")
+	}
+	for _, want := range []string{"was updated but final publish failed", "left UNPUBLISHED", "articles update-md --article-id 444 --republish"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error to contain %q, got %v", want, err)
+		}
+	}
+	wantOps := []string{"ArticleEntityUnpublish", "ArticleEntityUpdateContent", "ArticleEntityPublish"}
+	if strings.Join(poster.ops(), ",") != strings.Join(wantOps, ",") {
+		t.Fatalf("expected final publish failure after update, got %v", poster.ops())
 	}
 }

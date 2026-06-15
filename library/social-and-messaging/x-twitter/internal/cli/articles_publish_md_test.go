@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -93,6 +94,45 @@ func TestArticlesPublishMdUpdateRejectsDraftFlag(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "--update cannot be combined with --draft") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestArticlesPublishMdUpdateAcceptsReplaceUnknownEntitiesFlag(t *testing.T) {
+	dir := t.TempDir()
+	md := filepath.Join(dir, "article.md")
+	if err := os.WriteFile(md, []byte("---\ntitle: Dry Run\n---\n\nBody"), 0o600); err != nil {
+		t.Fatalf("write markdown: %v", err)
+	}
+
+	var flags rootFlags
+	cmd := newRootCmd(&flags)
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"articles-publish-md", md, "--update", "123", "--replace-unknown-entities", "--dry-run", "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected --replace-unknown-entities to be accepted on --update dry-run: %v\n%s", err, out.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(out.Bytes(), &payload); err != nil {
+		t.Fatalf("preview output is not JSON: %v\n%s", err, out.String())
+	}
+	if payload["article_id"] != "123" {
+		t.Fatalf("unexpected preview payload: %#v", payload)
+	}
+}
+
+func TestPublishMarkdownArticleMissingTitleMessageCoversDraft(t *testing.T) {
+	var flags rootFlags
+	_, err := publishMarkdownArticle(context.Background(), &flags, "", "", MarkdownBodyToDraftJS("Body"), false)
+	if err == nil {
+		t.Fatalf("expected missing-title error")
+	}
+	if !strings.Contains(err.Error(), "draft or post") {
+		t.Fatalf("expected title error to cover draft creation, got %v", err)
+	}
+	if strings.Contains(err.Error(), "--post") {
+		t.Fatalf("title error should not mention only --post, got %v", err)
 	}
 }
 
@@ -301,6 +341,25 @@ func TestMarkdownBodyToDraftJSMultipleLinks(t *testing.T) {
 		if _, present := ent.Value.Data["entityKey"]; present {
 			t.Fatalf("entity %d: entityKey must not be in the write payload, got %#v", i, ent.Value.Data)
 		}
+	}
+}
+
+func TestMarkdownBodyToDraftJSNestedBracketLinkText(t *testing.T) {
+	contentState := MarkdownBodyToDraftJS("[text [note](inner)](https://outer.example) done")
+
+	blk := contentState.Blocks[0]
+	if blk.Text != "text [note](inner) done" {
+		t.Fatalf("unexpected text: %q", blk.Text)
+	}
+	if len(blk.EntityRanges) != 1 || len(contentState.EntityMap) != 1 {
+		t.Fatalf("expected one outer link entity, got %d ranges / %d entities", len(blk.EntityRanges), len(contentState.EntityMap))
+	}
+	er := blk.EntityRanges[0]
+	if er["key"] != 0 || er["offset"] != 0 || er["length"] != 18 {
+		t.Fatalf("unexpected entity range: %#v", er)
+	}
+	if contentState.EntityMap[0].Value.Data["url"] != "https://outer.example" {
+		t.Fatalf("unexpected entity url: %#v", contentState.EntityMap[0].Value.Data["url"])
 	}
 }
 
