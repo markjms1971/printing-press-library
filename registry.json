@@ -395,6 +395,51 @@
       }
     },
     {
+      "name": "airbyte-admin",
+      "category": "cloud",
+      "api": "Airbyte Admin",
+      "description": "Read-only Airbyte administration CLI for inspecting workspaces, sources, destinations, connections, sync jobs, connector definitions, users, organizations, permissions, and tags from Airbyte Cloud or self-managed Airbyte.",
+      "search_terms": [
+        "airbyte-admin",
+        "Airbyte Admin",
+        "airbyte-admin-pp-cli",
+        "Read-only Airbyte administration CLI for inspecting workspaces, sources, destinations, connections, sync jobs, connector definitions, users, organizations, permissions, and tags from Airbyte Cloud or self-managed Airbyte.",
+        "Source and destination inventory",
+        "public list-sources",
+        "Lists Airbyte sources, with sibling destination and connection-detail commands for inspecting configured data movement.",
+        "Sync job visibility",
+        "public list-jobs",
+        "Lists sync jobs with connection filters and pagination for troubleshooting recent ELT activity.",
+        "Connector catalog lookup",
+        "public list-connector-definitions",
+        "Shows available source or destination connector definitions for a workspace or organization.",
+        "Workspace and access audit",
+        "public list-workspaces",
+        "Surfaces workspaces, users, organizations, permissions, and tags for Airbyte operational review.",
+        "Agent-ready local archive",
+        "sync",
+        "Caches Airbyte read endpoints locally for offline search, export, and repeatable agent analysis."
+      ],
+      "path": "library/cloud/airbyte-admin",
+      "printer": "sdhilip200",
+      "printer_name": "Dhilip Subramanian",
+      "mcp": {
+        "binary": "airbyte-admin-pp-mcp",
+        "transports": [
+          "stdio"
+        ],
+        "tool_count": 19,
+        "public_tool_count": 19,
+        "auth_type": "bearer_token",
+        "env_vars": [
+          "AIRBYTE_ADMIN_TOKEN",
+          "AIRBYTE_ADMIN_AUTH_HEADER",
+          "AIRBYTE_ADMIN_BASE_URL"
+        ],
+        "mcp_ready": "full"
+      }
+    },
+    {
       "name": "airframe",
       "category": "developer-tools",
       "api": "Airframe",
@@ -4648,6 +4693,51 @@
       "creator": {
         "handle": "john-fiedler",
         "name": "John Fiedler"
+      }
+    },
+    {
+      "name": "fred",
+      "category": "other",
+      "api": "FRED",
+      "description": "Every FRED endpoint, plus a local SQLite store, offline search, and macro commands no other FRED tool has.",
+      "search_terms": [
+        "fred",
+        "fred-pp-cli",
+        "Every FRED endpoint, plus a local SQLite store, offline search, and macro commands no other FRED tool has.",
+        "Macro dashboard",
+        "dashboard",
+        "Latest value of a curated set of headline U.S. indicators (unemployment, CPI, GDP, fed funds, 10Y, payrolls) in one call.",
+        "Series compare",
+        "Pull observations for multiple series and align them by date into one table or JSON for correlation.",
+        "Series latest",
+        "The single most recent observation (date + value) for a series, as a one-liner.",
+        "Watchlist",
+        "watchlist sync",
+        "Persist a set of series locally, sync their latest observations into SQLite, and report which ones moved since the last sync.",
+        "Release calendar",
+        "Recent and upcoming economic data release dates within a day window, aggregated across all releases."
+      ],
+      "path": "library/other/fred",
+      "printer": "LukeTheoJohnson",
+      "printer_name": "Luke J",
+      "creator": {
+        "handle": "LukeTheoJohnson",
+        "name": "Luke J"
+      },
+      "mcp": {
+        "binary": "fred-pp-mcp",
+        "transports": [
+          "stdio",
+          "http"
+        ],
+        "tool_count": 25,
+        "public_tool_count": 0,
+        "auth_type": "api_key",
+        "env_vars": [
+          "FRED_API_KEY"
+        ],
+        "mcp_ready": "full",
+        "spec_format": "internal"
       }
     },
     {
