@@ -227,6 +227,47 @@ func TestCompetitorMapResolvesCategoryFromIndustries(t *testing.T) {
 	}
 }
 
+func TestPublicSearchQueryAllowsNaturalQuestionPunctuation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/web/search":
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			if got, _ := body["query"].(string); !strings.Contains(got, "pricing?") {
+				t.Fatalf("query = %q, want punctuation preserved", got)
+			}
+			_, _ = w.Write([]byte(`{"results":[{"title":"Pricing","url":"https://pricing.example","snippet":"Context.dev pricing"}]}`))
+		case "/web/scrape/markdown":
+			_, _ = w.Write([]byte(`{"markdown":"Pricing details"}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	t.Setenv("CONTEXT_DEV_BASE_URL", server.URL)
+	t.Setenv("CONTEXT_DEV_API_KEY", "test-key")
+
+	_, err := runContextDevCommand("source-pack", "--query", "what's Context.dev pricing?", "--max-sources", "1", "--json")
+	if err != nil {
+		t.Fatalf("source-pack rejected natural search query: %v", err)
+	}
+}
+
+func TestOverlapSignalsOnlyReportsComputedMatches(t *testing.T) {
+	brand := map[string]any{"description": "privacy analytics platform", "industries": map[string]any{"eic": []any{map[string]any{"industry": "Analytics"}}}}
+	result := searchResult{Title: "Rival Analytics", URL: "https://rival.example", Snippet: "privacy pricing"}
+	signals := overlapSignals("seed.example", "pricing?", "healthcare", result, brand)
+	joined := strings.Join(signals, "|")
+	if strings.Contains(joined, "seed-domain") || strings.Contains(joined, "market: healthcare") {
+		t.Fatalf("signals included echoed inputs instead of computed matches: %#v", signals)
+	}
+	if !strings.Contains(joined, "result text matches search query") || !strings.Contains(joined, "brand category available") {
+		t.Fatalf("signals missing computed matches: %#v", signals)
+	}
+}
+
 func TestSourcePackPartialScrapeFailureKeepsSuccessfulSources(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

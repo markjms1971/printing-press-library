@@ -4,7 +4,6 @@ package cli
 
 import (
 	"bytes"
-	"context"
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/hex"
@@ -383,7 +382,7 @@ func newBrandBriefCmd(flags *rootFlags) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			out := buildBrandBrief(cmd.Context(), w, domain)
+			out := buildBrandBrief(w, domain)
 			return writeJSONPayload(cmd, flags, out)
 		},
 	}
@@ -414,7 +413,7 @@ func newCompetitorMapCmd(flags *rootFlags) *cobra.Command {
 				}
 			}
 			if query != "" {
-				if err := validatePublicWorkflowField("query", query); err != nil && !flags.dryRun {
+				if err := validatePublicSearchQuery("query", query); err != nil && !flags.dryRun {
 					return usageErr(err)
 				}
 			}
@@ -517,7 +516,7 @@ func newSourcePackCmd(flags *rootFlags) *cobra.Command {
 			if maxSources < 1 {
 				maxSources = 1
 			}
-			if err := validatePublicWorkflowField("query", query); err != nil && !flags.dryRun {
+			if err := validatePublicSearchQuery("query", query); err != nil && !flags.dryRun {
 				return usageErr(err)
 			}
 			var schema any
@@ -1047,6 +1046,30 @@ func validatePublicWorkflowField(label, value string) error {
 	return nil
 }
 
+func validatePublicSearchQuery(label, value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return fmt.Errorf("%s is required", label)
+	}
+	if len(value) > 240 {
+		return fmt.Errorf("%s must be 240 characters or fewer", label)
+	}
+	lower := strings.ToLower(value)
+	blocked := []string{"patient", "dob", "date of birth", "mrn", "medical record", "ssn", "passport", "driver license", "social security", "private notes"}
+	for _, term := range blocked {
+		if strings.Contains(lower, term) {
+			return fmt.Errorf("%s must not contain sensitive or person-identifying context", label)
+		}
+	}
+	if sensitiveIdentifierLikeRE.MatchString(value) || strings.ContainsAny(value, "\n\r;{}[]") {
+		return fmt.Errorf("%s must be a public search query, not a free-form private note", label)
+	}
+	if len(strings.Fields(value)) > 32 {
+		return fmt.Errorf("%s must be a concise public search query", label)
+	}
+	return nil
+}
+
 func extractWorkflowSearchResults(data json.RawMessage) []searchResult {
 	var v any
 	if err := json.Unmarshal(data, &v); err != nil {
@@ -1188,12 +1211,11 @@ func candidateSourceURL(candidate entityWorkflowCandidate) string {
 	return candidate.Website
 }
 
-func buildBrandBrief(ctx context.Context, w *operatorWorkflow, domain string) brandBrief {
+func buildBrandBrief(w *operatorWorkflow, domain string) brandBrief {
 	brand, brandProv := w.getSoft("/brand/retrieve", map[string]string{"domain": domain}, "brand")
 	style, styleProv := w.getSoft("/web/styleguide", map[string]string{"domain": domain}, "styleguide")
 	screenshot, screenshotProv := w.getSoft("/web/screenshot", map[string]string{"domain": domain}, "screenshot")
 	scrape, scrapeProv := w.getSoft("/web/scrape/markdown", map[string]string{"url": websiteURL(domain)}, "scrape_summary")
-	_ = ctx
 	brand = brandData(brand)
 	style = styleguideData(style)
 	out := brandBrief{
@@ -2121,13 +2143,13 @@ func collectFontFamilies(style map[string]any) []string {
 
 func overlapSignals(seedDomain, query, market string, result searchResult, brand map[string]any) []string {
 	var signals []string
-	if seedDomain != "" {
-		signals = append(signals, "same seed-domain competitor endpoint")
+	if seedDomain != "" && strings.EqualFold(domainFromURL(result.URL), normalizeDomainForCompare(seedDomain)) {
+		signals = append(signals, "same registered domain as seed")
 	}
-	if query != "" {
-		signals = append(signals, "matched adjacent search query")
+	if query != "" && searchResultMatchesQuery(result, brand, query) {
+		signals = append(signals, "result text matches search query")
 	}
-	if market != "" {
+	if market != "" && strings.Contains(strings.ToLower(strings.Join([]string{result.Title, result.Snippet, firstString(brand, "description", "summary"), brandCategory(brand)}, " ")), strings.ToLower(market)) {
 		signals = append(signals, "market: "+market)
 	}
 	if brandCategory(brand) != "" {
@@ -2137,6 +2159,27 @@ func overlapSignals(seedDomain, query, market string, result searchResult, brand
 		signals = append(signals, "search snippet overlap")
 	}
 	return signals
+}
+
+func normalizeDomainForCompare(value string) string {
+	return strings.TrimPrefix(strings.ToLower(strings.TrimSpace(value)), "www.")
+}
+
+func searchResultMatchesQuery(result searchResult, brand map[string]any, query string) bool {
+	haystack := strings.ToLower(strings.Join([]string{
+		result.Title,
+		result.URL,
+		result.Snippet,
+		firstString(brand, "title", "name", "legalName", "description", "summary"),
+		brandCategory(brand),
+	}, " "))
+	for _, term := range strings.Fields(strings.ToLower(query)) {
+		term = strings.Trim(term, "'\".,!?()[]{}#%")
+		if len(term) >= 3 && strings.Contains(haystack, term) {
+			return true
+		}
+	}
+	return false
 }
 
 func whyRanked(result searchResult, signals []string) string {
