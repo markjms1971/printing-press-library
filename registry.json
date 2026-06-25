@@ -601,6 +601,46 @@
       }
     },
     {
+      "name": "airhint",
+      "category": "travel",
+      "api": "Airhint",
+      "description": "AirHint flight price prediction API — buy/wait recommendations for airline tickets",
+      "search_terms": [
+        "airhint",
+        "airhint-pp-cli",
+        "AirHint flight price prediction API — buy/wait recommendations for airline tickets",
+        "Multi-date Prediction Sweep",
+        "workflow predict-sweep",
+        "Sweep buy/wait predictions across a date range for a route, fetching live prices for each date",
+        "Multi-route Comparison",
+        "workflow compare-routes",
+        "Compare buy/wait predictions across multiple origin-destination pairs on the same date",
+        "Cheapest Window Finder",
+        "workflow cheapest-window",
+        "Find the cheapest departure date in a given month using the cheapest-deal-month and cheapest-airline-deal-month endpoints"
+      ],
+      "path": "library/travel/airhint",
+      "printer": "jvm",
+      "printer_name": "jvm",
+      "creator": {
+        "handle": "jvm",
+        "name": "jvm"
+      },
+      "mcp": {
+        "binary": "airhint-pp-mcp",
+        "transports": [
+          "stdio",
+          "http"
+        ],
+        "tool_count": 7,
+        "public_tool_count": 7,
+        "auth_type": "none",
+        "env_vars": [],
+        "mcp_ready": "full",
+        "spec_format": "internal"
+      }
+    },
+    {
       "name": "alaska-airlines",
       "category": "travel",
       "api": "Alaska Airlines",
@@ -13193,6 +13233,12 @@
         "Show a runner's race history across Athlinks or NYRR using a name search, racer id, or the optional Athlinks current-user token."
       ],
       "path": "library/other/running-race-results",
+      "release": {
+        "cli_name": "running-race-results-pp-cli",
+        "version": "2026.6.1",
+        "released_at": "2026-06-25T22:32:48Z",
+        "source_commit": "4d81bf95413e3a36e82e3cf75baaa598aa441e33"
+      },
       "printer": "jiahongc",
       "printer_name": "Jiahong Chen",
       "creator": {
@@ -15311,9 +15357,9 @@
       "path": "library/productivity/superhuman",
       "release": {
         "cli_name": "superhuman-pp-cli",
-        "version": "2026.6.2",
-        "released_at": "2026-06-21T08:16:26Z",
-        "source_commit": "acb84091ff016c6e7aea5f8cf6956a694aa0d1c7"
+        "version": "2026.6.3",
+        "released_at": "2026-06-25T22:33:42Z",
+        "source_commit": "cc05943059c60f3c98f90c82a9289be7ff594c76"
       },
       "printer": "mvanhorn",
       "printer_name": "Matt Van Horn",
