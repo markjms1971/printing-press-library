@@ -20,12 +20,10 @@ type trendPlatformRow struct {
 }
 
 func newNovelTrendsTriangulateCmd(flags *rootFlags) *cobra.Command {
-	var days int
-
 	cmd := &cobra.Command{
 		Use:         "triangulate <query>",
 		Short:       "Snapshot a hashtag or topic across platforms in one call to see which platform it's biggest on.",
-		Example:     "  scrape-creators-pp-cli trends triangulate \"stanley cup\" --days 7",
+		Example:     "  scrape-creators-pp-cli trends triangulate \"stanley cup\"",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {
@@ -39,9 +37,6 @@ func newNovelTrendsTriangulateCmd(flags *rootFlags) *cobra.Command {
 				return usageErr(fmt.Errorf("query is required"))
 			}
 			query := args[0]
-			if days <= 0 {
-				days = 7
-			}
 
 			ctx, cancel := boundCtx(cmd.Context(), flags)
 			defer cancel()
@@ -103,7 +98,6 @@ func newNovelTrendsTriangulateCmd(flags *rootFlags) *cobra.Command {
 			if novelWantsMachine(cmd.OutOrStdout(), flags) {
 				envelope := map[string]any{
 					"query":            query,
-					"days":             days,
 					"platforms":        rows,
 					"leading_platform": leading,
 					"fetch_failures":   failures,
@@ -121,6 +115,5 @@ func newNovelTrendsTriangulateCmd(flags *rootFlags) *cobra.Command {
 			return tw.Flush()
 		},
 	}
-	cmd.Flags().IntVar(&days, "days", 7, "snapshot window in days (informational; recorded in output)")
 	return cmd
 }

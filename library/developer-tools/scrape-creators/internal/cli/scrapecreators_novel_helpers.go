@@ -9,6 +9,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mvanhorn/printing-press-library/library/developer-tools/scrape-creators/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -33,9 +35,29 @@ func subRequestCtx(parent context.Context) (context.Context, context.CancelFunc)
 
 // isNotFoundErr reports whether a client error is an HTTP 404 — a real
 // "handle/resource absent" signal that fan-out commands treat as a negative
-// result rather than a fetch failure.
+// result rather than a fetch failure. It matches on the typed APIError status
+// code rather than the error string, so a future change to the client's error
+// format cannot silently turn every 404 into a fetch failure.
 func isNotFoundErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "HTTP 404")
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == 404
+	}
+	return false
+}
+
+// isErrorEnvelope reports whether a 200 response body is actually a Scrape
+// Creators error envelope (`{"success": false, ...}`). The API returns HTTP 200
+// with this shape for some "not found"/upstream-down cases, so presence checks
+// must not treat a non-empty body as a real profile.
+func isErrorEnvelope(data json.RawMessage) bool {
+	var env struct {
+		Success *bool `json:"success"`
+	}
+	if err := json.Unmarshal(data, &env); err != nil {
+		return false
+	}
+	return env.Success != nil && !*env.Success
 }
 
 // sanitizeFetchErr renders a client error for inclusion in machine output. The

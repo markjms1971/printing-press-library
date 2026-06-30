@@ -176,7 +176,7 @@ These capabilities aren't available in any other tool for this API.
   _Use it to catch a trend's leading platform before it crests, for content-timing calls._
 
   ```bash
-  scrape-creators-pp-cli trends triangulate "stanley cup" --days 7 --agent
+  scrape-creators-pp-cli trends triangulate "stanley cup" --agent
   ```
 
 ### Local engagement analytics
@@ -253,7 +253,7 @@ Transcripts are cached to the local store whenever you run the per-platform tran
 ### Catch a rising trends leading platform
 
 ```bash
-scrape-creators-pp-cli trends triangulate "labubu" --days 7 --agent
+scrape-creators-pp-cli trends triangulate "labubu" --agent
 ```
 
 See per-platform result velocity for a topic and which platform it is cresting on first.

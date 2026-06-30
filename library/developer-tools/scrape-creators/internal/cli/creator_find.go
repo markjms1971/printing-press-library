@@ -84,7 +84,11 @@ func newNovelCreatorFindCmd(flags *rootFlags) *cobra.Command {
 					continue
 				}
 				followers, found := extractFollowerCount(pr.data)
-				exists := found || len(pr.data) > 2
+				// A platform counts as present when we extracted a follower count,
+				// or the body is a non-trivial, non-error profile payload. A 200
+				// that is actually a {"success": false} error envelope must not
+				// read as "exists".
+				exists := found || (len(pr.data) > 2 && !isErrorEnvelope(pr.data))
 				rows = append(rows, creatorPresenceRow{Platform: p.name, Exists: exists, FollowerCount: followers})
 				if exists {
 					presentCount++
