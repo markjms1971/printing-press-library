@@ -2855,9 +2855,9 @@
       "path": "library/marketing/beehiiv",
       "release": {
         "cli_name": "beehiiv-pp-cli",
-        "version": "2026.8.1",
-        "released_at": "2026-08-17T07:57:07Z",
-        "source_commit": "40363ac0936c4f406625f8399d8ad9b57673170e"
+        "version": "2026.9.1",
+        "released_at": "2026-09-06T09:14:25Z",
+        "source_commit": "0babe5d9363597c4f197d6c887c242bcc36696ba"
       },
       "printer": "kjmagnan1s",
       "printer_name": "Kevin Magnan",
