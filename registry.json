@@ -2049,9 +2049,9 @@
       "path": "library/other/ars-sicilia",
       "release": {
         "cli_name": "ars-sicilia-pp-cli",
-        "version": "2026.9.1",
-        "released_at": "2026-09-02T09:26:47Z",
-        "source_commit": "5d0ab8327e37afa2b30749755cf2cda7a19cf9c4"
+        "version": "2026.9.2",
+        "released_at": "2026-09-05T09:20:11Z",
+        "source_commit": "842355e8484cb683c8fd04872698b322d390c723"
       },
       "printer": "aborruso",
       "printer_name": "aborruso",
@@ -4953,9 +4953,9 @@
       "path": "library/productivity/concur",
       "release": {
         "cli_name": "concur-pp-cli",
-        "version": "2026.8.2",
-        "released_at": "2026-08-30T09:08:18Z",
-        "source_commit": "d97ee8c93245eee634bbf3f75541341e48fbfc44"
+        "version": "2026.9.1",
+        "released_at": "2026-09-05T09:19:18Z",
+        "source_commit": "b6b098e3300a24c3db6ae9a99e7e3d640deb6cf2"
       },
       "printer": "enlewof",
       "printer_name": "Allen Lew",
@@ -6889,9 +6889,9 @@
       "path": "library/health/drug-enforcement",
       "release": {
         "cli_name": "drug-enforcement-pp-cli",
-        "version": "2026.8.2",
-        "released_at": "2026-08-17T08:21:18Z",
-        "source_commit": "bc4b586302c2f3040178080f61960f98fff3529d"
+        "version": "2026.9.1",
+        "released_at": "2026-09-05T09:20:11Z",
+        "source_commit": "3392f5e1df18c08d6a8519e227b51dfa17190a8e"
       },
       "printer": "laci141",
       "printer_name": "laci141",
@@ -11016,9 +11016,9 @@
       "path": "library/health/grants",
       "release": {
         "cli_name": "grants-pp-cli",
-        "version": "2026.9.1",
-        "released_at": "2026-09-04T09:11:15Z",
-        "source_commit": "a914de3dd810f25d9d5f76cf910e6d158ac71050"
+        "version": "2026.9.2",
+        "released_at": "2026-09-05T09:20:11Z",
+        "source_commit": "586c652e455e90e5819ca354e6fb15af5935bd9f"
       },
       "printer": "laci141",
       "printer_name": "laci141",
@@ -15745,6 +15745,66 @@
         "env_vars": [],
         "mcp_ready": "full",
         "spec_format": "internal"
+      }
+    },
+    {
+      "name": "nccpl",
+      "category": "payments",
+      "api": "Nccpl",
+      "description": "Pakistan's clearing-layer data as a local research panel with a coverage audit and an arithmetic self-check, not another dashboard.",
+      "search_terms": [
+        "nccpl",
+        "nccpl-pp-cli",
+        "Pakistan's clearing-layer data as a local research panel with a coverage audit and an arithmetic self-check, not another dashboard.",
+        "Arithmetic invariant validator",
+        "verify",
+        "Prove a date's flow numbers are internally consistent before they reach a regression.",
+        "Per-resource coverage and gap ledger",
+        "coverage",
+        "List which sessions are missing per resource, how stale each one is, and how wide each date's data actually is.",
+        "Live endpoint self-test",
+        "contract-check",
+        "Assert every endpoint family still answers correctly for a date it just reported as its own latest.",
+        "Vintage-stamped research panel export",
+        "panel",
+        "Emit any synced resource as a tidy long-format panel, with gaps marked rather than filled.",
+        "Point-in-time symbol roster",
+        "universe",
+        "Reconstruct which symbols were listed and clearing-eligible on any past date.",
+        "Risk-parameter change detector",
+        "risk-changes",
+        "Date every step change in a symbol's free float, VAR margin and haircut.",
+        "Unified leverage and short-interest panel",
+        "leverage",
+        "Join MTS, MFS and MSF open positions with SLB net open position into one per-symbol cross-section.",
+        "Gate-free FIPI/LIPI flow feed",
+        "flows",
+        "Fetch daily FIPI/LIPI sector flows into the local store without a browser.",
+        "Browser-capture ingest",
+        "ingest",
+        "Load NCCPL responses captured through your own browser into the same local store.",
+        "Browser-assisted capture",
+        "capture",
+        "Fetch the gated NCCPL datasets through a controlled browser and store them locally; opt in with --launch, and add --headless to run with no window."
+      ],
+      "path": "library/payments/nccpl",
+      "printer": "qazmataz",
+      "printer_name": "qazmataz",
+      "creator": {
+        "handle": "qazmataz",
+        "name": "qazmataz"
+      },
+      "mcp": {
+        "binary": "nccpl-pp-mcp",
+        "transports": [
+          "stdio",
+          "http"
+        ],
+        "tool_count": 42,
+        "public_tool_count": 21,
+        "auth_type": "composed",
+        "env_vars": [],
+        "mcp_ready": "partial"
       }
     },
     {
@@ -23420,9 +23480,9 @@
       "path": "library/payments/splitwise",
       "release": {
         "cli_name": "splitwise-pp-cli",
-        "version": "2026.8.1",
-        "released_at": "2026-08-17T07:57:07Z",
-        "source_commit": "40363ac0936c4f406625f8399d8ad9b57673170e"
+        "version": "2026.9.1",
+        "released_at": "2026-09-05T09:20:11Z",
+        "source_commit": "a53f809033e8810da500b950fd6d1e47541db54d"
       },
       "printer": "vinnyp",
       "printer_name": "Vinny Pasceri",
@@ -27459,9 +27519,9 @@
       "path": "library/other/weather-goat",
       "release": {
         "cli_name": "weather-goat-pp-cli",
-        "version": "2026.8.1",
-        "released_at": "2026-08-17T07:57:07Z",
-        "source_commit": "40363ac0936c4f406625f8399d8ad9b57673170e"
+        "version": "2026.9.1",
+        "released_at": "2026-09-05T09:20:11Z",
+        "source_commit": "70976e594cc638bc06e3ad7703b4ab068f780a0f"
       },
       "printer": "tmchow",
       "printer_name": "Trevin Chow",
