@@ -8929,9 +8929,9 @@
       "path": "library/travel/flight-goat",
       "release": {
         "cli_name": "flight-goat-pp-cli",
-        "version": "2026.9.2",
-        "released_at": "2026-09-11T09:22:21Z",
-        "source_commit": "81f5764eda401077520268afe74913c0f21f5b7e"
+        "version": "2026.9.3",
+        "released_at": "2026-09-24T08:55:18Z",
+        "source_commit": "3aa4c42dc3a04f211f242c71afc34cc43e277f31"
       },
       "printer": "mvanhorn",
       "printer_name": "Matt Van Horn",
