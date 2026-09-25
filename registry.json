@@ -12800,6 +12800,12 @@
         "Which agencies list in a zone, their PEB F/G share, private-seller share and the CRM software behind each feed."
       ],
       "path": "library/other/immovlan",
+      "release": {
+        "cli_name": "immovlan-pp-cli",
+        "version": "2026.9.1",
+        "released_at": "2026-09-24T08:56:14Z",
+        "source_commit": "e26a0069d1bf9eb31bc9f40d8e48a7e6db8088a6"
+      },
       "printer": "sambassio",
       "printer_name": "sambassio",
       "creator": {
@@ -29805,6 +29811,58 @@
         "env_vars": [],
         "mcp_ready": "full",
         "spec_format": "internal"
+      }
+    },
+    {
+      "name": "zimmo",
+      "category": "other",
+      "api": "Zimmo",
+      "description": "Belgian real estate from Zimmo with exact addresses, sold comps, commune prices per m² and a local store for deal sourcing.",
+      "search_terms": [
+        "zimmo",
+        "zimmo-pp-cli",
+        "Belgian real estate from Zimmo with exact addresses, sold comps, commune prices per m² and a local store for deal sourcing.",
+        "Bulk detail enrichment",
+        "enrich",
+        "Refresh stored listings from Zimmo, resumably: status changes, price history, EPC, flood and planning flags, GPS.",
+        "Cross-portal match",
+        "same-as",
+        "Find the Immoweb or Immovlan twin of a Zimmo listing and the price gap between portals.",
+        "Sold comps",
+        "comps",
+        "Sold or rented listings around one property with median €/m² and the subject's gap to it.",
+        "PEB trap",
+        "peb-trap",
+        "Energy-poor stored listings (EPC F/G or high kWh/m²), rented ones first with their rent, showing Zimmo's renovation-obligation flag.",
+        "Underpriced vs commune",
+        "underpriced",
+        "Rank stored for-sale houses and apartments by discount to their commune's €/m² (viager, whole buildings and service flats skipped).",
+        "Gross rental yield",
+        "yield",
+        "Gross rental yield of sale listings: the published rent when let, otherwise rentals of similar surface in the same postcode and type.",
+        "Motivated seller score",
+        "motivated",
+        "Rank listings by seller pressure: days on market, total price cut, re-listing, EPC."
+      ],
+      "path": "library/other/zimmo",
+      "printer": "sambassio",
+      "printer_name": "sambassio",
+      "creator": {
+        "handle": "sambassio",
+        "name": "sambassio"
+      },
+      "mcp": {
+        "binary": "zimmo-pp-mcp",
+        "transports": [
+          "stdio",
+          "http"
+        ],
+        "tool_count": 10,
+        "public_tool_count": 10,
+        "auth_type": "none",
+        "env_vars": [],
+        "mcp_ready": "full",
+        "spec_format": "openapi3"
       }
     },
     {
